@@ -5,21 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="868635f9-c720-4d43-9aef-585644fbda81" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/Dillithium_ECDH_E5.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Client.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Kyber.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Server.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/aes256_ctr_drbg.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modules.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ntt_helper.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polynomials.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/shake_wrapper.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Client.py" beforeDir="false" afterPath="$PROJECT_DIR$/Client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Server.py" beforeDir="false" afterPath="$PROJECT_DIR$/Server.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,7 +69,8 @@
       <workItem from="1718454928050" duration="1292000" />
       <workItem from="1718537354250" duration="4042000" />
       <workItem from="1718597190050" duration="14486000" />
-      <workItem from="1718638959727" duration="350000" />
+      <workItem from="1718638959727" duration="1438000" />
+      <workItem from="1718698290365" duration="9650000" />
     </task>
     <servers />
   </component>

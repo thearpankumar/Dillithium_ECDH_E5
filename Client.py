@@ -1,13 +1,10 @@
 import json
 import os
 import socket
-#from cryptography.hazmat.primitives.asymmetric import kyber
-from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
-#from pqcrypto.kem.kyber1024 import generate_keypair
 from dilithium.dilithium import Dilithium2
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519, ec
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -57,9 +54,9 @@ client_ecdh_public_key = client_ecdh_private_key.public_key()
 
 # Assume Crystal Kyber and Crystal Dilithium keys are generated and handled similarly
 client_kyber_public_key, client_kyber_private_key = Kyber1024.keygen()   # Replace with actual Kyber key generation
-print("kyber key pair : ", client_kyber_public_key, client_kyber_private_key)
+#print("kyber key pair : ", client_kyber_public_key, client_kyber_private_key)
 client_dilithium_private_key, client_dilithium_public_key = Dilithium2.keygen(os.urandom(32))  # Replace with actual Dilithium key generation
-print("dilithium public key  : ", client_dilithium_public_key)
+#print("dilithium public key  : ", client_dilithium_public_key)
 
 # Connect to server
 server_address = ('localhost', 10000)
@@ -113,7 +110,7 @@ try:
         "publicKey": client_kyber_public_key.hex()
     })
     signature = sign_message(client_ed25519_private_key, kyber_data.encode())
-    print("signature : ", signature)
+    #print("signature : ", signature)
     encrypted_kyber_data = aes_encrypt(shared_secret_1, json.dumps({"data": kyber_data, "signature": signature.hex()}).encode())
     print("encrypted kyber data : ", encrypted_kyber_data)
     sock.sendall(encrypted_kyber_data)
@@ -128,10 +125,13 @@ try:
     server_kyber_public_key = bytes.fromhex(server_kyber_data["publicKey"])
     print("Received and verified server's Kyber public key")
 
+    Cipher_kyber_Client, shared_secret_2 = Kyber1024.enc(server_kyber_public_key)
+
     # Step 7: Send client's Kyber cipher (signed with Ed25519 and encrypted with AES)
+    print("Clinet kyber shared secret : ", shared_secret_2)
     kyber_cipher_data = {
         "protocol": "CrystalKyber",
-        "cipher": client_kyber_public_key.hex()  # Replace with actual Kyber encryption
+        "cipher": Cipher_kyber_Client.hex()  # Replace with actual Kyber encryption
     }
     kyber_cipher_data_json = json.dumps(kyber_cipher_data)
     signature = sign_message(client_ed25519_private_key, kyber_cipher_data_json.encode())
@@ -157,39 +157,46 @@ try:
     server_ed25519_public_key.verify(server_signature, json.dumps(server_kyber_data).encode())
     print("Received and verified server's Kyber cipher")
 
-    # Derive shared secret 2 from Kyber
-    print(len(server_kyber_public_key))
+    print(server_kyber_public_key)
 
-    #shared_secret_2 = client_ecdh_private_key.exchange(ec.ECDH(), server_ecdh_public_key)  # This should be replaced with actual Kyber key exchange
-    #shared_secret_2 = derive_key(shared_secret_2)
-    shared_secret_2 =shared_secret_1
-    print("Derived shared secret 2", shared_secret_2)
+    server_shared_secret = Kyber1024.dec(server_kyber_cipher, client_kyber_private_key)
+    print("Derived server shared secret 2", server_shared_secret , "\n Cipher key is : ", server_kyber_cipher)
 
     # Step 9: Send client's Dilithium signature (signed with Ed25519 and encrypted with AES)
-    dilithium_data = json.dumps({
-        "protocol": "CrystalDilithium",
-        "publicKey": client_dilithium_public_key.hex()
-    })
-    signature = sign_message(client_ed25519_private_key, dilithium_data.encode())
-    print("signature: ", signature)
-    encrypted_dilithium_data = aes_encrypt(shared_secret_2,
-                                           json.dumps({"data": dilithium_data, "signature": signature}).encode())
-    print("encrypted dilithium data: ", encrypted_dilithium_data)
-    sock.sendall(encrypted_dilithium_data)
-    print("Sent client's Dilithium signature")
+    dilithium_publickey_data = {
+        "protocol": "CrystalKyber",
+        "publicKey": client_dilithium_public_key.hex()  # Replace with actual Kyber encryption
+    }
+    dilithium_publickey_data_json = json.dumps(dilithium_publickey_data)
+    signature_dilithium = sign_message(client_ed25519_private_key, dilithium_publickey_data_json.encode())
+    encrypted_dilithium_publickey_data = aes_encrypt(shared_secret_1, json.dumps(
+        {"data": dilithium_publickey_data, "signature": signature_dilithium.hex()}).encode())
 
-    """# Step 10: Receive server's Dilithium signature (signed with Ed25519 and encrypted with new shared secret)
-    server_dilithium_encrypted_data = sock.recv(4096)
-    server_dilithium_data_signed = aes_decrypt(shared_secret_2, server_dilithium_encrypted_data)
-    server_dilithium_json = json.loads(server_dilithium_data_signed)
-    server_dilithium_signature = bytes.fromhex(server_dilithium_json["data"]["signature"])
-    server_signature = bytes.fromhex(server_dilithium_json["signature"])
-    server_ed25519_public_key.verify(server_signature, server_dilithium_json["data"].encode())
-    print("Received and verified server's Dilithium signature")
+    sock.sendall(encrypted_dilithium_publickey_data)
+    print("Encrypted dilithium publickey: ", encrypted_dilithium_publickey_data)
+    print("Sent client's Dilithium public key")
+
+    # Step 10: Receive server's Dilithium signature (signed with Ed25519 and encrypted with new shared secret)
+    server_dilithium_encrypted = sock.recv(5500)
+    print("Server dilithium encrypted data: ", server_dilithium_encrypted)
+    server_dilithium_data_signed = aes_decrypt(shared_secret_1, server_dilithium_encrypted).decode()
+    server_dilithium_publickey_json = json.loads(server_dilithium_data_signed)
+    server_dilithium_data_json = json.loads(server_dilithium_publickey_json["data"])
+    server_dilithium_publickey = bytes.fromhex(server_dilithium_data_json["publicKey"])
+    dilithium_server_signature = bytes.fromhex(server_dilithium_publickey_json["signature"])
+
+    # Verify the signature
+    server_ed25519_public_key.verify(
+        dilithium_server_signature,
+        json.dumps(server_dilithium_data_json).encode()
+    )
+    print("Received and verified server's Dilithium public key")
 
     # Step 11: Send data message (signed with both Ed25519 and Dilithium, encrypted with new shared secret)
     data = json.dumps({"message": "Client message"})
+    print(f"Client: data to be signed: {data}")
     ed25519_signature = sign_message(client_ed25519_private_key, data.encode())
+    print(f"Client: Ed25519 signature: {ed25519_signature.hex()}")
     # Assume Dilithium signing function
     # dilithium_signature = sign_dilithium_message(client_dilithium_private_key, data.encode())
     data_json = json.dumps({
@@ -199,20 +206,19 @@ try:
             # "Dilithium": dilithium_signature.hex()
         }
     })
-    encrypted_data = aes_encrypt(shared_secret_2, data_json.encode())
+    encrypted_data = aes_encrypt(shared_secret_1, data_json.encode())
     sock.sendall(encrypted_data)
     print("Sent data message")
 
     # Step 12: Receive data response (signed with both Ed25519 and Dilithium, encrypted with new shared secret)
     response_encrypted = sock.recv(4096)
-    response_signed = aes_decrypt(shared_secret_2, response_encrypted)
+    response_signed = aes_decrypt(shared_secret_1, response_encrypted)
     response_json = json.loads(response_signed)
     response_data = json.loads(response_json["data"])
     signatures = response_json["signatures"]
-    verify_signature(server_ed25519_public_key, bytes.fromhex(signatures["Ed25519"]), response_data["data"].encode())
-    # Assume Dilithium verification function
+    #verify_signature(server_ed25519_public_key, bytes.fromhex(signatures["Ed25519"]), json.dumps(response_json).encode())
     # verify_dilithium_signature(server_dilithium_public_key, bytes.fromhex(signatures["Dilithium"]), response_data["data"].encode())
-    print(f"Received response: {response_data['data']}")"""
+    print(f"Received response: {response_data['data']}")
 
 finally:
     sock.close()
