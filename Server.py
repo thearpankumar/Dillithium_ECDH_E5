@@ -197,7 +197,7 @@ while True:
         ed25519_signature = signatures["Ed25519"]
         print(f"Server: received data: {data}")
         print(f"Server: received Ed25519 signature: {ed25519_signature}")
-        #verify_signature(client_ed25519_public_key, bytes.fromhex(ed25519_signature), data_signed)
+        #verify_signature(client_ed25519_public_key, ed25519_signature, data)
 
         # Step 12: Send data response (signed with both Ed25519 and Dilithium, encrypted with new shared secret)
         response_data = json.dumps({"data": "Server response message"})
