@@ -1,5 +1,5 @@
 import random
-from utils import *
+from Dilithium_ECDH_kyber_signature.utils import *
 
 
 class PolynomialRing:
